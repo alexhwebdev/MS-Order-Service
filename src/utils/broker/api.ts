@@ -21,7 +21,7 @@ export const GetProductDetails = async (
     );
     // console.log('GetProductDetails response ', response)
     const product = response.data;
-    console.log('GetProductDetails product ', product)
+    console.log('GetProductDetails 5 product ', product)
 
     return response.data as Product;
   } catch (error) {

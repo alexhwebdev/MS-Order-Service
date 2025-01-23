@@ -12,22 +12,22 @@ export const ExpressApp = async () => {
   app.use(express.json());
   app.use(httpLogger);
 
-  // // 1st step: connect to the producer and consumer
-  // const producer = await MessageBroker.connectProducer<Producer>();
-  // producer.on("producer.connect", () => {
-  //   console.log("producer connected");
-  // });
+  // 1st step: connect to the producer and consumer
+  const producer = await MessageBroker.connectProducer<Producer>();
+  producer.on("producer.connect", () => {
+    console.log("express-app.ts - STEP 1 Producer connected");
+  });
 
-  // const consumer = await MessageBroker.connectConsumer<Consumer>();
-  // consumer.on("consumer.connect", () => {
-  //   console.log("consumer connected");
-  // });
+  const consumer = await MessageBroker.connectConsumer<Consumer>();
+  consumer.on("consumer.connect", () => {
+    console.log("express-app.ts - STEP 2.2 Consumer connected");
+  });
 
-  // // 2nd step: subscribe to the topic or publish the message
-  // await MessageBroker.subscribe((message) => {
-  //   console.log("Consumer received the message");
-  //   console.log("Message received", message);
-  // }, "OrderEvents");
+  // 2nd step: subscribe to the topic or publish the message
+  await MessageBroker.subscribe((message) => {
+    console.log("****** STEP 6 Consumer received the message");
+    console.log("****** STEP 6 Message received : message", message);
+  }, "OrderEvents");
 
   app.use(cartRoutes);
   app.use(orderRoutes);

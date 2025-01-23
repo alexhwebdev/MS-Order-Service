@@ -6,7 +6,9 @@ export enum OrderEvent {
 export type TOPIC_TYPE = "OrderEvents" | "CatalogEvents";
 
 export interface MessageType {
-  headers?: Record<string, any>;
+  headers?: Record<string, any>;  // key is string, type can be any
   event: OrderEvent;
-  data: Record<string, any>;
+  data: Record<string, any>;  // key is string, type can be any
 }
+
+// Record : object type with specific key-value constraints

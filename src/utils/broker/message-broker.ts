@@ -16,17 +16,19 @@ const kafka = new Kafka({
 let producer: Producer;
 let consumer: Consumer;
 
+// Producer functionality
 const createTopic = async (topic: string[]) => {
   const topics = topic.map((t) => ({
     topic: t,
     numPartitions: 2,
-    replicationFactor: 1, // based on available brokers
+    replicationFactor: 1, // Spinning one broker. Based on available brokers
   }));
+  console.log("message-broker.ts - STEP 0,4 topics", topics);
 
   const admin = kafka.admin();
   await admin.connect();
   const topicExists = await admin.listTopics();
-  console.log("topicExists", topicExists);
+  console.log("message-broker.ts - STEP 0,4 topicExists", topicExists);
   for (const t of topics) {
     if (!topicExists.includes(t.topic)) {
       await admin.createTopics({
@@ -39,18 +41,15 @@ const createTopic = async (topic: string[]) => {
 
 const connectProducer = async <T>(): Promise<T> => {
   await createTopic(["OrderEvents"]);
-
   if (producer) {
-    console.log("producer already connected with existing connection");
-    return producer as unknown as T;
+    console.log("message-broker.ts - STEP 1 Producer already connected with existing connection");
+    return producer as unknown as T; //  is a way to cast the producer object to the type T
   }
-
   producer = kafka.producer({
     createPartitioner: Partitioners.DefaultPartitioner,
   });
-
   await producer.connect();
-  console.log("producer connected with a new connection");
+  console.log("message-broker.ts - STEP 1,4 Producer connected with a new connection");
   return producer as unknown as T;
 };
 
@@ -72,7 +71,7 @@ const publish = async (data: PublishType): Promise<boolean> => {
       },
     ],
   });
-  console.log("publishing result", result);
+  console.log("message-broker.ts - STEP 5 Publish : result", result);
   return result.length > 0;
 };
 
@@ -81,11 +80,13 @@ const connectConsumer = async <T>(): Promise<T> => {
   if (consumer) {
     return consumer as unknown as T;
   }
-
   consumer = kafka.consumer({
-    groupId: GROUP_ID,
+    groupId: GROUP_ID,  // "order-service-group"
   });
-
+  // console.log(
+  //   "message-broker.ts - STEP 2.0 connectConsumer() consumer", 
+  //   consumer
+  // );
   await consumer.connect();
   return consumer as unknown as T;
 };
@@ -98,10 +99,21 @@ const disconnectConsumer = async (): Promise<void> => {
 
 const subscribe = async (
   messageHandler: MessageHandler,
-  topic: TOPIC_TYPE
+  topic: TOPIC_TYPE  // "OrderEvents" | "CatalogEvents"
 ): Promise<void> => {
+  console.log(
+    "message-broker.ts - STEP 2.1 subscribe() messageHandler", 
+    messageHandler
+  );
+  console.log(
+    "message-broker.ts - STEP 2.1 subscribe() topic", 
+    topic
+  );
   const consumer = await connectConsumer<Consumer>();
-  await consumer.subscribe({ topic: topic, fromBeginning: true });
+  await consumer.subscribe({ 
+    topic: topic, 
+    fromBeginning: true 
+  });
 
   await consumer.run({
     eachMessage: async ({ topic, partition, message }) => {
@@ -115,7 +127,12 @@ const subscribe = async (
           event: message.key.toString() as OrderEvent,
           data: message.value ? JSON.parse(message.value.toString()) : null,
         };
+        // export enum OrderEvent {
+        //   CREATE_ORDER = "create_order",
+        //   CANCEL_ORDER = "cancel_order",
+        // }
         await messageHandler(inputMessage);
+        // Confirm to Kafka we have processed message successfully
         await consumer.commitOffsets([
           { topic, partition, offset: (Number(message.offset) + 1).toString() },
         ]);
@@ -133,9 +150,6 @@ export const MessageBroker: MessageBrokerType = {
   subscribe,
 };
 
-
-
-
 // export const MessageBroker: MessageBrokerType = {
 //   connectProducer: function <T>(): Promise<T> {
 //     throw new Error("Function not implemented.");
@@ -152,7 +166,10 @@ export const MessageBroker: MessageBrokerType = {
 //   disconnectConsumer: function (): Promise<void> {
 //     throw new Error("Function not implemented.");
 //   },
-//   subscribe: function (messageHandler: MessageHandler, topic: TOPIC_TYPE): Promise<void> {
+//   subscribe: function (
+//     messageHandler: MessageHandler, 
+//     topic: TOPIC_TYPE
+//   ): Promise<void> {
 //     throw new Error("Function not implemented.");
 //   }
 // };

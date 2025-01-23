@@ -6,23 +6,16 @@ import { CartRequestInput, CartRequestSchema } from "../dto/cartRequest.do";
 
 const router = express.Router();
 const repo = repository.CartRepository;  // Dependency injection.
+// Code my own Verification check. This authMiddleware just validates all.
+const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+  const isValidUser = true;
+  if (!isValidUser) {
+    res.status(403).json({ error: "authorization error" });
+  }
+  next();
+};
 
-// const authMiddleware = async (
-//   req: Request, res: Response, next: NextFunction
-// ) => {
-//   // jwt
-//   const isValidUser = true;
-//   if (!isValidUser) {
-//     res.status(403).json({ error: "authorization error" });
-//   }
-
-//   next();
-// };
-
-router.post(
-  "/cart",
-  // authMiddleware,
-  async (req: Request, res: Response, next: NextFunction) => {
+router.post("/cart", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     console.log('cart.routes.ts - 1 req.body', req.body)
     try {
       const error = ValidateRequest<CartRequestInput>(
@@ -38,7 +31,7 @@ router.post(
         req.body as CartRequestInput,
         repo
       );
-      console.log('cart.routes.ts - 6 response', response)
+      console.log('cart.routes.ts - 7 response', response)
       res.status(200).json(response);
     } catch (error) {
       res.status(404).json({ error }); // "Not Found"
@@ -47,39 +40,32 @@ router.post(
 );
 
 router.get("/cart", async (req: Request, res: Response, next: NextFunction) => {
-  // Comes from our auth user parsed from JWT
+  // L15 21 mm.
   const response = await service.GetCart(
-    req.body,
-    // req.body.customerId, 
+    req.body.customerId, // Comes from our auth user parsed from JWT. I need to code this.
     repo
   );
   res.status(200).json(response);
 });
 
-router.patch(
-  "/cart/:lineItemId",
-  async (req: Request, res: Response, next: NextFunction) => {
-    // const liteItemId = req.params.lineItemId;
+router.patch("/cart/:lineItemId", async (req: Request, res: Response, next: NextFunction) => {
+    const lineItemId = req.params.lineItemId;
     const response = await service.EditCart(
-      req.body,
-      // {
-      //   id: +liteItemId,  // "+" shorthand way to convert string to number
-      //   qty: req.body.qty,
-      // },
+      {
+        id: +lineItemId,  // "+" shorthand way to convert string to number
+        qty: req.body.qty,
+      },
       repo
     );
     res.status(200).json(response);
   }
 );
 
-router.delete(
-  "/cart/:lineItemId",
-  async (req: Request, res: Response, next: NextFunction) => {
-    // const liteItemId = req.params.lineItemId;
-    // console.log('liteItemId ', liteItemId);
+router.delete("/cart/:lineItemId", async (req: Request, res: Response, next: NextFunction) => {
+    const lineItemId = req.params.lineItemId;
+    console.log('lineItemId ', lineItemId);
     const response = await service.DeleteCart(
-      req.body,
-      // +liteItemId, 
+      +lineItemId, 
       repo
     );
   }
