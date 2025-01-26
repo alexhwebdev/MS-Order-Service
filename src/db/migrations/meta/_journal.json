@@ -15,6 +15,13 @@
       "when": 1737502121610,
       "tag": "0001_silky_rick_jones",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1737856639365,
+      "tag": "0002_dusty_katie_power",
+      "breakpoints": true
     }
   ]
 }

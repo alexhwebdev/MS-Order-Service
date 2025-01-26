@@ -1,16 +1,23 @@
 // import { CartRepositoryType } from "../types/repository.type";
 import { DB } from "../db/db.connection";
-import { Cart, CartLineItem, cartLineItems, carts } from "../db/schema";
+import { 
+  // Cart, 
+  CartLineItem, cartLineItems, carts } from "../db/schema";
+import { CartWithLineItems } from "../dto/cartRequest.dto";
 import { NotFoundError } from "../utils";
 import { eq } from "drizzle-orm";
 
 // declare repository type
 export type CartRepositoryType = {
   createCart: (customerId: number, lineItem: CartLineItem) => Promise<number>;
-  findCart: (id: number) => Promise<Cart>;
+  findCart: (id: number) => Promise<CartWithLineItems>;
   updateCart: (id: number, qty: number) => Promise<CartLineItem>;
   deleteCart: (id: number) => Promise<Boolean>;
   clearCartData: (id: number) => Promise<Boolean>;
+  findCartByProductId: (
+    customerId: number,
+    productId: number
+  ) => Promise<CartLineItem>;
 };
 
 const createCart = async (
@@ -29,7 +36,6 @@ const createCart = async (
     });
   console.log('cart.repository - createCart result', result)
 
-  
   const [{ id }] = result;
   // Connect to DB. Perform DB operations
   if (id > 0) {   // If item present
@@ -46,7 +52,7 @@ const createCart = async (
 };
 
 // L15 11 mm
-const findCart = async (id: number): Promise<Cart> => {
+const findCart = async (id: number): Promise<CartWithLineItems> => {
   const cart = await DB.query.carts.findFirst({
     where: (carts, { eq }) => eq(carts.customerId, id),
     with: {
@@ -89,12 +95,29 @@ const clearCartData = async (id: number): Promise<boolean> => {
   return true;
 };
 
+const findCartByProductId = async (
+  customerId: number,
+  productId: number
+): Promise<CartLineItem> => {
+  const cart = await DB.query.carts.findFirst({
+    where: (carts, { eq }) => eq(carts.customerId, customerId),
+    with: {
+      lineItems: true,
+    },
+  });
+  const lineItem = cart?.lineItems.find(
+    (item) => item.productId === productId
+  );
+  return lineItem as CartLineItem;
+};
+
 export const CartRepository: CartRepositoryType = {
   createCart,
   findCart,
   updateCart,
   deleteCart,
   clearCartData,
+  findCartByProductId
 };
 
 
