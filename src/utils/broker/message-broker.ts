@@ -23,12 +23,12 @@ const createTopic = async (topic: string[]) => {
     numPartitions: 2,
     replicationFactor: 1, // Spinning one broker. Based on available brokers
   }));
-  console.log("message-broker.ts - STEP 0,4 topics", topics);
+  console.log("ORDER_SERVICE - createTopic message-broker.ts : topics", topics);
 
   const admin = kafka.admin();
   await admin.connect();
   const topicExists = await admin.listTopics();
-  console.log("message-broker.ts - STEP 0,4 topicExists", topicExists);
+  console.log("ORDER_SERVICE - createTopic message-broker.ts : topicExists", topicExists);
   for (const t of topics) {
     if (!topicExists.includes(t.topic)) {
       await admin.createTopics({
@@ -36,7 +36,7 @@ const createTopic = async (topic: string[]) => {
       });
     }
   }
-  await admin.disconnect();
+  await admin.disconnect();  // Once Topic has been successfully create, disconnect.
 };
 
 const connectProducer = async <T>(): Promise<T> => {
@@ -60,7 +60,9 @@ const disconnectProducer = async (): Promise<void> => {
 };
 
 const publish = async (data: PublishType): Promise<boolean> => {
+  console.log("ORDER_SERVICE message-broker.ts - Publish : data", data);
   const producer = await connectProducer<Producer>();
+  console.log("ORDER_SERVICE message-broker.ts - Publish : producer", producer);
   const result = await producer.send({
     topic: data.topic,
     messages: [
@@ -71,7 +73,7 @@ const publish = async (data: PublishType): Promise<boolean> => {
       },
     ],
   });
-  console.log("message-broker.ts - STEP 5 Publish : result", result);
+  console.log("ORDER_SERVICE message-broker.ts - Publish : result", result);
   return result.length > 0;
 };
 

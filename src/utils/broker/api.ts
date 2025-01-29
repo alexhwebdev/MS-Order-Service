@@ -62,3 +62,11 @@ export const ValidateUser = async (token: string) => {
     throw new AuthorizeError("user not authorized");
   }
 };
+
+
+/*
++ L23 37mm
++ This api.ts file is for Synchronous communication calls
++ We cannot wait for async events to happen, like update data
+
+*/

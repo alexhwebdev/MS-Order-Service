@@ -9,7 +9,6 @@ import * as service from "../service/order.service";
 import { OrderRepository } from "../repository/order.repository";
 import { CartRepository } from "../repository/cart.repository";
 
-
 const repo = OrderRepository;
 const cartRepo = CartRepository;
 const router = express.Router();
@@ -56,6 +55,7 @@ router.post(
 
 router.get(
   "/orders",
+  RequestAuthorizer,
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     if (!user) {
@@ -70,6 +70,7 @@ router.get(
 
 router.get(
   "/orders/:id",
+  RequestAuthorizer,
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     if (!user) {
@@ -86,6 +87,7 @@ router.get(
 // only going to call from microservice
 router.patch(
   "/orders/:id",
+  RequestAuthorizer,
   async (req: Request, res: Response, next: NextFunction) => {
     // security check for microservice calls only
     const orderId = parseInt(req.params.id);
@@ -99,6 +101,7 @@ router.patch(
 // only going to call from microservice
 router.delete(
   "/orders/:id",
+  RequestAuthorizer,
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     if (!user) {
@@ -108,6 +111,15 @@ router.delete(
     const orderId = parseInt(req.params.id);
     const response = await service.DeleteOrder(orderId, repo);
     // return res.status(200).json(response);
+    res.status(200).json(response);
+  }
+);
+
+router.get(
+  "/orders/:id/checkout",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const orderId = parseInt(req.params.id);
+    const response = await service.CheckoutOrder(orderId, repo);
     res.status(200).json(response);
   }
 );

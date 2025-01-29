@@ -11,7 +11,9 @@ export type OrderRepositoryType = {
   findOrdersByCustomerId: (customerId: number) => Promise<OrderWithLineItems[]>;
 };
 
-const createOrder = async (lineItem: OrderWithLineItems): Promise<number> => {
+const createOrder = async (
+  lineItem: OrderWithLineItems
+): Promise<number> => {
   const result = await DB.insert(orders)
     .values({
       customerId: lineItem.customerId,
@@ -74,11 +76,6 @@ const updateOrder = async (
   return order;
 };
 
-const deleteOrder = async (id: number): Promise<boolean> => {
-  await DB.delete(orders).where(eq(orders.id, id)).execute();
-  return true;
-};
-
 const findOrdersByCustomerId = async (
   customerId: number
 ): Promise<OrderWithLineItems[]> => {
@@ -88,14 +85,18 @@ const findOrdersByCustomerId = async (
       lineItems: true,
     },
   });
-
   return orders as unknown as OrderWithLineItems[];
+};
+
+const deleteOrder = async (id: number): Promise<boolean> => {
+  await DB.delete(orders).where(eq(orders.id, id)).execute();
+  return true;
 };
 
 export const OrderRepository: OrderRepositoryType = {
   createOrder,
   findOrder,
   updateOrder,
-  deleteOrder,
   findOrdersByCustomerId,
+  deleteOrder,
 };

@@ -88,9 +88,17 @@ const deleteCart = async (id: number): Promise<boolean> => {
 };
 
 const clearCartData = async (id: number): Promise<boolean> => {
+  console.log(
+    'ORDER_SERVICE cart.repository.ts : clearCartData - id ', 
+    id
+  )
+  console.log(
+    'ORDER_SERVICE cart.repository.ts : clearCartData - carts.id ', 
+    carts.id
+  )
   await DB
     .delete(carts)
-    .where(eq(carts.id, id))
+    .where(eq(carts.customerId, id))
     .returning();
   return true;
 };

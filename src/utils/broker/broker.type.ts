@@ -20,10 +20,8 @@ export type MessageBrokerType = {
   connectConsumer: <T>() => Promise<T>;
   disconnectConsumer: () => Promise<void>;  // void return type means the function does not return any meaningful value; it simply indicates completion.
   subscribe: (
-    // messageHandler: Function,
-    // topic: string
-    messageHandler: MessageHandler,
-    topic: TOPIC_TYPE
+    messageHandler: MessageHandler,  // was messageHandler: Function,
+    topic: TOPIC_TYPE   // was topic: string
   ) => Promise<void>;
 };
 

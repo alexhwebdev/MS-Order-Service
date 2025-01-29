@@ -1,7 +1,8 @@
-import { OrderLineItemType, OrderWithLineItems } from "../dto/orderRequest.dto";
+import { InProcessOrder, OrderLineItemType, OrderWithLineItems } from "../dto/orderRequest.dto";
 import { CartRepositoryType } from "../repository/cart.repository";
 import { OrderRepositoryType } from "../repository/order.repository";
 import { MessageType, OrderStatus } from "../types";
+import { SendCreateOrderMessage } from "./broker.service";
 
 export const CreateOrder = async (
   userId: number,
@@ -37,8 +38,8 @@ export const CreateOrder = async (
   // create order with line items
   const orderInput: OrderWithLineItems = {
     orderNumber: orderNumber,
-    txnId: null,
-    status: OrderStatus.PENDING,
+    txnId: null,  // TODO: Payment ID to keep track of successful payment.
+    status: OrderStatus.PENDING,  // Payment status to be updated by payment service.
     customerId: userId,
     amount: cartTotal.toString(),
     orderItems: orderLineItems,
@@ -47,10 +48,12 @@ export const CreateOrder = async (
  
   const order = await orderRepo.createOrder(orderInput);
   console.log('ORDER_SERVICE service : CreateOrder - order ', order)
-  await cartRepo.clearCartData(userId);
+  await cartRepo.clearCartData(userId);  // clear... from CartRepositoryType
   console.log("Order created", order);
+
   // fire a message to subscription service [catalog service] to update stock
-  // await orderRepo.publishOrderEvent(order, "ORDER_CREATED");
+  // await SendCreateOrderMessage({ order: orderInput })
+  await SendCreateOrderMessage(orderInput);
 
   // return success message
   return { message: "Order created successfully", orderNumber: orderNumber };
@@ -63,7 +66,7 @@ export const UpdateOrder = async (
 ) => {
   await orderRepo.updateOrder(orderId, status);
 
-  // fire a message to subscription service [catalog service] to update stock
+  // fire message to subscription service [catalog service] to update stock
   // TODO: handle Kafka calls
   if (status === OrderStatus.CANCELLED) {
     // await orderRepo.publishOrderEvent(order, "ORDER_CANCELLED");
@@ -71,7 +74,10 @@ export const UpdateOrder = async (
   return { message: "Order updated successfully" };
 };
 
-export const GetOrder = (orderId: number, orderRepo: OrderRepositoryType) => {
+export const GetOrder = (
+  orderId: number, 
+  orderRepo: OrderRepositoryType
+) => {
   const order = orderRepo.findOrder(orderId);
   if (!order) {
     throw new Error("Order not found");
@@ -79,7 +85,10 @@ export const GetOrder = (orderId: number, orderRepo: OrderRepositoryType) => {
   return order;
 };
 
-export const GetOrders = async (userId: number, orderRepo: OrderRepositoryType) => {
+export const GetOrders = async (
+  userId: number, 
+  orderRepo: OrderRepositoryType
+) => {
   const orders = await orderRepo.findOrdersByCustomerId(userId);
   if (!Array.isArray(orders)) {
     throw new Error("Orders not found");
@@ -96,8 +105,31 @@ export const DeleteOrder = async (
 };
 
 export const HandleSubscription = async (message: MessageType) => {
-  console.log("Message received by order Kafka consumer", message);
+  console.log(
+    "ORDER SERVICE : Message received by order Kafka consumer", 
+    message
+  );
 
   // if (message.event === OrderEvent.ORDER_UPDATED) {
   // call create order
+};
+
+export const CheckoutOrder = async (
+  orderId: number,
+  orderRepo: OrderRepositoryType
+) => {
+  const order = await orderRepo.findOrder(orderId);
+  if (!order) {
+    throw new Error("Order not found");
+  }
+  const checkoutOrder: InProcessOrder = {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    customerId: order.customerId,
+    amount: Number(order.amount),
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+  }
+  return checkoutOrder;
 };
